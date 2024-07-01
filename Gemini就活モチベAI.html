@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="jp">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=yes, initial-scale=1"
+    />
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-KGYNP825TC"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "G-KGYNP825TC");
+    </script>
+
+    <title>就活モチベアップAI</title>
+
+    <style>
+      body {
+        margin: 32px;
+        position: relative;
+        font-family: "Roboto", sans-serif;
+        background-color: #eceff1;
+      }
+      section {
+        padding: 16px;
+        margin-bottom: 32px;
+        border-radius: 15px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      }
+      input[type="text"] {
+        width: 100%;
+        max-width: 800px;
+        height: 32px;
+        font-size: 24px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        padding: 5px;
+      }
+      p {
+        font-size: 22px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      button {
+        background-color: #3f51b5;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+        border: none;
+        transition: background-color 0.3s;
+      }
+      button:hover {
+        background-color: #283593;
+      }
+      @media (max-width: 768px) {
+        body {
+          margin: 16px;
+        }
+        input[type="text"] {
+          font-size: 16px;
+        }
+        p {
+          font-size: 18px;
+        }
+        button {
+          padding: 10px 16px;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>就活モチベAI</h1>
+
+    <div id="dialog" style="display: none">
+      <p>APIキーを入力してください:</p>
+      <input type="text" id="apiKey" />
+      <button id="okButton">OK</button>
+      <!-- <button id="demoButton">デモ版を使用</button> -->
+    </div>
+
+    <section>
+      <label for="prompt">企業名: </label>
+      <input type="text" id="prompt" />
+      <p>AIが褒めてくれます！AIにヨシヨシしてもらいましょう！</p>
+      <button id="CompanyResearch">企業研究お願い！</button>
+      <button id="ESAdvice">ESのコツ</button>
+      <button id="RejectedCompany">落ちてしまった..</button>
+      <button id="applicationSelect">書類選考突破</button>
+      <button id="InitialInterviewSelect">1次面接突破</button>
+      <button id="SecondRoundInterviewSelect">2次面接突破</button>
+      <button id="ThirdRoundInterviewSelect">3次面接突破</button>
+      <button id="FinalInterviewSelect">次、最終面接！</button>
+      <button id="JobOffer">内定もらった！</button>
+    </section>
+
+    <!-- <section>
+      <label for="files">Images: </label>
+      <input type="file" id="files" multiple />
+      <button id="sendTextAndImages">Send</button>
+    </section> -->
+
+    <section>
+      <label for="output"
+        >AIが出力した内容には間違いや混乱を招く情報が含まれている可能性があります。</label
+      ><br />
+      <p id="output"></p>
+    </section>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import { GoogleGenerativeAI } from "@google/generative-ai";
+      let selectionprocess = "";
+      document.addEventListener("DOMContentLoaded", (event) => {
+        // ダイアログ表示
+        const dialog = document.getElementById("dialog");
+        dialog.style.display = "block";
+
+        // OKボタンクリック時の処理
+        document
+          .getElementById("okButton")
+          .addEventListener("click", async () => {
+            const apiKey = document.getElementById("apiKey").value;
+
+            // APIキーを格納
+            const API_KEY = apiKey;
+
+            // ダイアログを閉じる
+            dialog.style.display = "none";
+            const genAI = new GoogleGenerativeAI(API_KEY);
+
+            // Input: Text, Output: Text
+            const sendText = async () => {
+              const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+              let prompt = document.getElementById("prompt").value;
+
+              /// プロンプトの内容を改ざんする
+
+              prompt =
+                "命令 : あなたはやさしい高校生です。高校生ならではの今どきの口調をしています。以下 あなたに聞きたいこと : 今就職活動中なんだけど、" +
+                prompt +
+                "っていう企業の" +
+                selectionprocess;
+
+              const result = await model.generateContent(prompt);
+              const response = await result.response;
+              document.getElementById("output").innerText = response.text();
+            };
+
+            // Utility function to load an image from the passed file.
+            async function fileToGenerativePart(file) {
+              const base64EncodedDataPromise = new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(",")[1]);
+                reader.readAsDataURL(file);
+              });
+              return {
+                inlineData: {
+                  data: await base64EncodedDataPromise,
+                  mimeType: file.type,
+                },
+              };
+            }
+
+            // Input: Text, Output Text (Keep the conversation context)
+            let chat = null;
+            // 書類選考突破ボタンクリック時の処理
+            document
+              .getElementById("applicationSelect")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess = "書類選考が突破したよ";
+                // 関数を実行
+                sendText();
+              });
+            // 1次面接突破ボタンクリック時の処理
+            document
+              .getElementById("InitialInterviewSelect")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess = "一次面接を突破したよ";
+                // 関数を実行
+                sendText();
+              });
+            // 2次面接突破ボタンクリック時の処理
+            document
+              .getElementById("SecondRoundInterviewSelect")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess = "二次面接を突破したよ";
+                // 関数を実行
+                sendText();
+              });
+            // 3次面接突破ボタンクリック時の処理
+            document
+              .getElementById("ThirdRoundInterviewSelect")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess = "三次面接を突破したよ";
+                // 関数を実行
+                sendText();
+              });
+            // 最終面接突破ボタンクリック時の処理
+            document
+              .getElementById("FinalInterviewSelect")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess = "最終面接を控えているんだ";
+                // 関数を実行
+                sendText();
+              });
+            // 内定もらったボタンクリック時の処理
+            document
+              .getElementById("JobOffer")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess = "内定を獲得したよ！";
+                // 関数を実行
+                sendText();
+              });
+            // 企業研究お願いボタンクリック時の処理
+            document
+              .getElementById("CompanyResearch")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess =
+                  "企業研究をしたい。面接で使える会社概要について調べてほしい。";
+                // 関数を実行
+                sendText();
+              });
+            // document
+            //   .getElementById("ESAdvice")
+            //   .addEventListener("click", () => {
+            //     // 変数に値を代入
+            //     selectionprocess =
+            //       "の志望理由を書いてください。200文字と400文字の2つを用意してくださいね。";
+            //     // 関数を実行
+            //     sendText();
+            //   });
+            document
+              .getElementById("ESAdvice")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess =
+                  "エントリーシートを書くためのコツを企業ならではの特徴を交えて教えてほしい。命令は厳守してね。";
+                // 関数を実行
+                sendText();
+              });
+            document
+              .getElementById("RejectedCompany")
+              .addEventListener("click", () => {
+                // 変数に値を代入
+                selectionprocess = "選考落ちてしまった。慰めて。";
+                // 関数を実行
+                sendText();
+              });
+          });
+      });
+    </script>
+  </body>
+</html>
